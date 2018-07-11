@@ -1,19 +1,15 @@
 package com.nlkj.controller;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,8 +19,7 @@ import com.nlkj.entity.T_Job;
 import com.nlkj.entity.T_Wrong;
 import com.nlkj.entity.Time;
 import com.nlkj.service.WrongService;
-import com.nlkj.utils.AESUtil;
-import com.nlkj.utils.CommonUtil;
+import com.nlkj.utils.RSACheckUtil;
 import com.nlkj.utils.Result;
 import com.nlkj.utils.ResultCode;
 
@@ -93,16 +88,21 @@ public class WrongController{
 	public Result checkSign(HttpServletRequest request,Student student) {
 		String sign = request.getHeader("sign");
 		String time=request.getHeader("time");
-		Object data = redisTemplate.opsForValue().get(student.getSid().toString());
-		if(data==null) {
-			if(new CommonUtil().judgeNULL(student,sign,time)){
-				redisTemplate.opsForValue().set(student.getSid().toString(), sign+","+1+","+time,60*1,TimeUnit.SECONDS);
-				System.out.println("加入redis并成功设置过期时间");
+		String pubKey=request.getHeader("pubKey");
+		//Object data = redisTemplate.opsForValue().get(student.getSid().toString());
+		//if(data==null) {
+			String status = RSACheckUtil.checkPublicKey(pubKey);
+			if(status.equals("success")){
+				//redisTemplate.opsForValue().set(student.getSid().toString(), sign+","+1+","+time,60*1,TimeUnit.SECONDS);
+				//System.out.println("加入redis并成功设置过期时间");
 				return new Result(ResultCode.SUCCESS, student);
+			}else if(status.equals("error")) {
+				return new Result(ResultCode.SUCCESS,"获得密钥出错");
+			}else {
+			 	return new Result(ResultCode.LOSEEFFICACY, status);
 			}
-			return new Result(ResultCode.WRONGFUL);
-		}
-		return new Result(ResultCode.WRONGFUL);
+		//}
+		//return new Result(ResultCode.WRONGFUL);
 		
 	}
 

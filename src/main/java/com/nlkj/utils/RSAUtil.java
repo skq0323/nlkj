@@ -3,15 +3,30 @@
  */
 package com.nlkj.utils;
 
-import org.apache.commons.codec.binary.Base64;
-
-import java.security.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.Cipher;
+
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * @author 石凯强
@@ -222,12 +237,69 @@ public class RSAUtil {
         return keyMap;
     }
     
+    /**读取文件中的密钥**/
+	private static String readFile(String filePath) throws Exception {
+        File inFile = new File(filePath);
+        long fileLen = inFile.length();
+        Reader reader = new FileReader(inFile);
+ 
+        char[] content = new char[(int) fileLen];
+        reader.read(content);
+        return new String(content);
+    }
+    
+    
+    
     public static void main(String[] args) throws Exception {
         Map<String, Key> keyMap = initKey();
         String publicKey = getPublicKey(keyMap);
         String privateKey = getPrivateKey(keyMap);
         
-        System.out.println(keyMap);
+        // 保存密钥，名字分别为publicKey。txt 和privateKey。txt;
+        /*PrintWriter pw1 = new PrintWriter(new FileOutputStream(
+                "D:/publicKey.txt"));
+        PrintWriter pw2 = new PrintWriter(new FileOutputStream(
+                "D:/privateKey.txt"));
+        pw1.println(publicKey);
+        pw2.println(privateKey);
+        pw1.close();
+        pw2.close();*/
+        File file1=new File("D:/publicKey.txt");
+        File file2=new File("D:/privateKey.txt");
+        
+        //存储密钥到文件中
+        OutputStream outputStream1=new FileOutputStream(file1);
+        OutputStream outputStream2=new FileOutputStream(file2);
+		outputStream1.write(publicKey.getBytes());
+		outputStream2.write(privateKey.getBytes());
+		outputStream1.close();
+		outputStream2.close();
+	
+		
+		File file = new File("D:/publicKey.txt");
+		InputStream inputStream = new FileInputStream(file);//文件内容的字节流
+		InputStreamReader inputStreamReader= new InputStreamReader(inputStream); //得到文件的字符流
+		BufferedReader bufferedReader=new BufferedReader(inputStreamReader); //放入读取缓冲区
+		String readd="";
+		StringBuffer stringBuffer=new StringBuffer();
+		while ((readd=bufferedReader.readLine())!=null) {
+			stringBuffer.append(readd);
+		}
+		inputStream.close();
+		String keystr=stringBuffer.toString();
+		System.out.println("从文件中读取到的公钥为"+keystr);
+		System.out.println(keystr.equals(publicKey));
+		//从文件中获取密钥
+		
+        // 从保存的目录读取刚才的保存的公钥，
+       /* String pubkey = readFile("D:/publicKey.txt");// 读取的公钥内容；
+        String prikey=readFile("D:/privateKey.txt");
+        System.out.println("文件中的私钥"+prikey);
+        System.out.println(prikey==privateKey);
+        System.out.println("文件中的公钥"+pubkey);
+        System.out.println(pubkey.equals(publicKey));*/
+        
+       /* System.out.println(keyMap);
         System.out.println("-----------------------------------");
         System.out.println(publicKey);
         System.out.println("-----------------------------------");
@@ -235,9 +307,9 @@ public class RSAUtil {
         System.out.println("-----------------------------------");
         byte[] encryptByPrivateKey = encryptByPrivateKey("123456".getBytes(),privateKey);
         byte[] encryptByPublicKey = encryptByPublicKey("123456",publicKey);
-        System.out.println(new String(encryptByPrivateKey));
+        System.out.println(encryptByPrivateKey);
         System.out.println("-----------------------------------");
-        System.out.println(new String(encryptByPublicKey));
+        System.out.println(encryptByPublicKey);
         System.out.println("-----------------------------------");
         String sign = sign(encryptByPrivateKey,privateKey);
         System.out.println(sign);
@@ -249,7 +321,7 @@ public class RSAUtil {
         byte[] decryptByPrivateKey = decryptByPrivateKey(encryptByPublicKey,privateKey);
         System.out.println(new String(decryptByPublicKey));
         System.out.println("-----------------------------------");
-        System.out.println(new String(decryptByPrivateKey));
+        System.out.println(new String(decryptByPrivateKey));*/
         
     }
 
