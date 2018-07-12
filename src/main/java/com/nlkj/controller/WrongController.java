@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -22,6 +25,9 @@ import com.nlkj.service.WrongService;
 import com.nlkj.utils.RSACheckUtil;
 import com.nlkj.utils.Result;
 import com.nlkj.utils.ResultCode;
+import com.nlkj.utils.TokenUtil;
+
+import ch.qos.logback.core.subst.Token;
 
 @RestController
 @RequestMapping("/test")
@@ -31,6 +37,9 @@ public class WrongController{
 	
 	@Resource
 	private RedisTemplate<String, Object> redisTemplate;
+	
+	@Autowired
+	private MongoTemplate mongoTemplate;
 	
 	@RequestMapping(value="/getTime",method=RequestMethod.GET)
 	public Result getTime(double[] time) {
@@ -89,21 +98,31 @@ public class WrongController{
 		String sign = request.getHeader("sign");
 		String time=request.getHeader("time");
 		String pubKey=request.getHeader("pubKey");
-		//Object data = redisTemplate.opsForValue().get(student.getSid().toString());
-		//if(data==null) {
+		Object data = redisTemplate.opsForValue().get(student.getSid().toString());
+		if(data==null) {
 			String status = RSACheckUtil.checkPublicKey(pubKey);
 			if(status.equals("success")){
-				//redisTemplate.opsForValue().set(student.getSid().toString(), sign+","+1+","+time,60*1,TimeUnit.SECONDS);
-				//System.out.println("加入redis并成功设置过期时间");
+				redisTemplate.opsForValue().set(student.getSid().toString(), sign+","+1+","+time,60*1,TimeUnit.SECONDS);
+				mongoTemplate.insert(student);
+				System.out.println("加入redis并成功设置过期时间");
 				return new Result(ResultCode.SUCCESS, student);
 			}else if(status.equals("error")) {
 				return new Result(ResultCode.SUCCESS,"获得密钥出错");
 			}else {
 			 	return new Result(ResultCode.LOSEEFFICACY, status);
 			}
-		//}
-		//return new Result(ResultCode.WRONGFUL);
+		}
+		return new Result(ResultCode.WRONGFUL);
 		
+	}
+	
+	@RequestMapping(value="checkToken",method=RequestMethod.POST)
+	public Result checkToken(HttpSession session) {
+		String token = TokenUtil.getTokenString(session);
+		System.out.println(token);
+		boolean b = TokenUtil.isTokenStringValid(token, session);
+		System.out.println(b);
+		return new Result(ResultCode.SUCCESS,token);
 	}
 
 

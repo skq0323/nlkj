@@ -47,6 +47,15 @@ public class Student {
 	public Student() {
 		super();
 	}
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Student [sid=" + sid + ", sname=" + sname + ", sex=" + sex + ", age=" + age + "]";
+	}
+	
+	
 	
 
 }
